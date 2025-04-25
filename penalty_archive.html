@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en-GB">
+
+<head>
+  <meta charset="utf-8" />
+  <title>MAMS Soccer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    #scoreboard {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      text-align: center;
+      font-size: 80px;
+      z-index: 100;
+      display: block;
+      font-family: Impact;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="scoreboard">0 - 0</div>
+
+  <script type="module">
+    import * as THREE from 'https://cdn.skypack.dev/three@0.129.0/build/three.module.js';
+    import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.129.0/examples/jsm/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'https://cdn.skypack.dev/three@0.129.0/examples/jsm/loaders/DRACOLoader.js';
+    import { PointerLockControls } from 'https://cdn.skypack.dev/three@0.129.0/examples/jsm/controls/PointerLockControls.js';
+
+
+    const WIDTH = window.innerWidth;
+    const HEIGHT = window.innerHeight;
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(WIDTH, HEIGHT);
+    renderer.setClearColor(0xdddddd, 1);
+    document.body.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(70, WIDTH / HEIGHT);
+    const controls = new PointerLockControls(camera, renderer.domElement);
+
+    camera.position.set(300, 0, 50);
+    scene.add(camera);
+    let model = null;
+    let ball = null;
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://cdn.skypack.dev/three@0.129.0/examples/jsm/libs/draco/gltf/');
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+    loader.load('free_soccer_pitch.glb', function (gltf) {
+
+      model = gltf.scene;
+      model.position.set(-10, -195, 0);
+      model.scale.set(5, 5, 5);
+      scene.add(model);
+
+
+    }, undefined, function (e) {
+
+      console.error(e);
+
+    });
+    loader.load('al_rihla_3d_ball.glb', function (gltf) {
+
+      ball = gltf.scene;
+      ball.scale.set(20, 20, 20);
+      scene.add(ball);
+
+
+    }, undefined, function (e) {
+
+      console.error(e);
+
+    });
+
+    var light = new THREE.PointLight(0xFFFFFF, 5);
+    light.position.set(-10, 300, 50);
+    scene.add(light);
+
+    var geo = new THREE.PlaneBufferGeometry(2000, 2000);
+    var mat = new THREE.MeshLambertMaterial({ color: 0x3f9b0b, side: THREE.DoubleSide });
+    var plane = new THREE.Mesh(geo, mat);
+    plane.translateY(-10);
+    plane.rotateX(- Math.PI / 2);
+
+    const geometry = new THREE.SphereGeometry(5, 20, 10);
+    const material = new THREE.MeshLambertMaterial({ color: 0x333300 });
+    const sphere = new THREE.Mesh(geometry, material); scene.add(sphere);
+    sphere.position.set(410, 10, 0);
+    const geometry2 = new THREE.SphereGeometry(5, 20, 10);
+    geometry2.scale(1, 2, 1);
+    const sphere2 = new THREE.Mesh(geometry2, material); scene.add(sphere2);
+    sphere2.position.set(410, 0, 0);
+    const geometry3 = new THREE.SphereGeometry(3, 14, 7);
+    const sphere3 = new THREE.Mesh(geometry3, material); scene.add(sphere3);
+    sphere3.position.set(410, 3, 5);
+    const geometry4 = new THREE.SphereGeometry(3, 14, 7);
+    const sphere4 = new THREE.Mesh(geometry4, material); scene.add(sphere4);
+    sphere4.position.set(410, 3, -5);
+    const geometry5 = new THREE.SphereGeometry(3, 14, 7);
+    const sphere5 = new THREE.Mesh(geometry5, material); scene.add(sphere5);
+    sphere5.position.set(410, -9, 4);
+    const geometry6 = new THREE.SphereGeometry(3, 14, 7);
+    const sphere6 = new THREE.Mesh(geometry6, material); scene.add(sphere6);
+    sphere6.position.set(410, -9, -4);
+
+    const targetg = new THREE.SphereGeometry(2, 20, 10);
+    const matt = new THREE.MeshLambertMaterial({ color: 0xFF0000 });
+    const target = new THREE.Mesh(targetg, matt); scene.add(target);
+    target.position.set(410, 0, 0);
+
+    //scene.add(plane);
+
+    document.addEventListener("keydown", keyDownHandler, false);
+    document.addEventListener("keyup", keyUpHandler, false);
+    let rightPressed = false;
+    let leftPressed = false;
+    let upPressed = false;
+    let downPressed = false;
+    let spacePressed = false;
+    function keyDownHandler(event) {
+      if (event.code === "KeyD") {
+        rightPressed = true;
+      } else if (event.code === "KeyA") {
+        leftPressed = true;
+      }
+      if (event.code === "KeyS") {
+        downPressed = true;
+      } else if (event.code === "KeyW") {
+        upPressed = true;
+      }
+
+      if (event.code == "Space") {
+        spacePressed = true;
+      }
+    }
+    function keyUpHandler(event) {
+      if (event.code === "KeyD") {
+        rightPressed = false;
+      } else if (event.code === "KeyA") {
+        leftPressed = false;
+      }
+      if (event.code === "KeyS") {
+        downPressed = false;
+      } else if (event.code === "KeyW") {
+        upPressed = false;
+      }
+
+      if (event.code == "Space") {
+        spacePressed = false;
+      }
+    }
+    let xvel = 0;
+    let yvel = 0;
+    let zvel = 0;
+    let ballx = 320;
+    let bally = -7.5;
+    let ballz = 0;
+    let ballxvel = 0;
+    let ballyvel = 0;
+    let ballzvel = 0;
+
+    let scoring = false;
+
+    let touchingball;
+    let touchinggoal;
+    let transferSpeed;
+    let speed;
+    let spaceTime;
+    let mode;
+    let shooting;
+    let blocked;
+
+    let kickTime = null;;
+
+    let goals = 0;
+    let misses = 0;
+    function reset() {
+      blocked = false;
+      camera.position.set(300, 0, 50);
+      moveGoalieY(0);
+
+      moveGoalieZ(0);
+      xvel = 0;
+      yvel = 0;
+      zvel = 0;
+      ballx = 320;
+      bally = -7.5;
+      ballz = 0;
+      ballxvel = 0;
+      ballyvel = 0;
+      ballzvel = 0;
+      scoring = false;
+
+      touchingball = false;
+      touchinggoal = false;
+      transferSpeed = 1;
+      speed = 1;
+      spaceTime = null;
+      mode = 'pk';
+      shooting = true;
+      kickTime = null;
+    }
+    document.body.addEventListener('click', function () {
+      //lock mouse on screen
+      controls.lock();
+    }, false);
+
+    function moveGoalieY(y) {
+      sphere.position.y = (y) + 10;
+      sphere2.position.y = (y);
+      sphere3.position.y = (y) + 3;
+      sphere4.position.y = (y) + 3;
+      sphere5.position.y = (y) - 9;
+      sphere6.position.y = (y) - 9;
+    }
+    function moveGoalieZ(z) {
+      sphere.position.z = (z);
+      sphere2.position.z = (z);
+      sphere3.position.z = (z) + 5;
+      sphere4.position.z = (z) - 5;
+      sphere5.position.z = (z) + 4;
+      sphere6.position.z = (z) - 4;
+    }
+    let goalieTarget = 0;
+    let goalieMoveTime = 0;
+    let cutsceneTime = 0;
+    let startingCamera;
+
+    function render() {
+      setTimeout(() => {
+        requestAnimationFrame(render);
+      }, 100);
+      renderer.render(scene, camera);
+
+      if (!ball) { return; }
+      if (mode != 'cutscene') {
+        ballx += ballxvel;
+        ballz += ballzvel;
+        ball.rotateX(ballzvel * 1 / 10);
+
+        ball.rotateZ(-ballxvel * 1 / 10);
+        ballxvel *= 0.99;
+        ballzvel *= 0.99;
+        if (ball) ball.position.set(ballx, bally, ballz);
+
+        yvel -= 0.1;
+        if (camera.position.y > 0 || yvel > 0) {
+          camera.position.y += yvel;
+        }
+        ballyvel -= 0.1;
+
+        if (bally > -7.5 || ballyvel > 0) {
+          bally += ballyvel;
+        } else {
+          bally = -7.5;
+        }
+        if (bally < -5 && bally > -7.5 && ballyvel < 0) {
+          ballyvel = -ballyvel * 0.8;
+        }
+
+        camera.position.x += xvel;
+        camera.position.z += zvel;
+        xvel *= 0.8;
+        zvel *= 0.8;
+      }
+      if (mode == 'normal') {
+        const vector = new THREE.Vector3();
+        let v = camera.getWorldDirection(vector);
+
+        if (rightPressed || leftPressed || downPressed || upPressed) {
+          xvel = 0;
+          zvel = 0;
+
+          if (rightPressed) {
+            xvel += -v.z;
+            zvel += v.x;
+          } else if (leftPressed) {
+            xvel += v.z;
+            zvel += -v.x;
+          }
+
+          if (downPressed) {
+            xvel += -v.x;
+            zvel += -v.z;
+          } else if (upPressed) {
+            xvel += v.x;
+            zvel += v.z;
+          }
+          let mag = Math.sqrt(xvel * xvel + zvel * zvel);
+          xvel *= speed / mag;
+          zvel *= speed / mag;
+        }
+        if (spacePressed) {
+
+        }
+
+        if (spacePressed && (!spaceTime || Date.now() - spaceTime < 500)) {
+          console.log('charging')
+          if (!spaceTime) {
+            spaceTime = Date.now();
+          }
+          speed = 1.5;
+          transferSpeed *= 1.05;
+        } else {
+          console.log('uncharged')
+          speed = 1;
+          transferSpeed = 1;
+        }
+        if (!spacePressed) {
+          spaceTime = null;
+        }
+
+
+        if (ball && (ball.position.x - camera.position.x) * (ball.position.x - camera.position.x) + (ball.position.z - camera.position.z) * (ball.position.z - camera.position.z) < 100) {
+          if (!touchingball) {
+            ballxvel = transferSpeed * xvel;
+            ballzvel = transferSpeed * zvel;
+            if (spacePressed) {
+              ballyvel = transferSpeed;
+              let r = 100 * Math.random() - 50;
+              sphere.position.z = (r);
+              sphere2.position.z = (r);
+              sphere3.position.z = (r) + 5;
+              sphere4.position.z = (r) - 5;
+              sphere5.position.z = (r) + 4;
+              sphere6.position.z = (r) - 4;
+
+
+            }
+            touchingball = true;
+          }
+          let dist = (ball.position.x - camera.position.x) * (ball.position.x - camera.position.x) + (ball.position.z - camera.position.z) * (ball.position.z - camera.position.z);
+          dist = 10 - Math.sqrt(dist);
+          let ox = (ball.position.x - camera.position.x);
+          let oz = (ball.position.z - camera.position.z);
+          let l = Math.sqrt(ox * ox + oz * oz);
+          ballx += dist * ox / l;
+          ballz += dist * oz / l;
+        } else {
+          touchingball = false;
+        }
+      } else if (mode == 'pk') {
+        const vect = new THREE.Vector3();
+        let v = camera.getWorldDirection(vect);
+
+        if (rightPressed || leftPressed || downPressed || upPressed) {
+          let xvel2 = 0;
+          zvel = 0;
+
+          if (rightPressed) {
+            xvel2 += -v.z;
+            zvel += v.x;
+          } else if (leftPressed) {
+            xvel2 += v.z;
+            zvel += -v.x;
+          }
+
+          if (downPressed) {
+            xvel2 += -v.x;
+            zvel += -v.z;
+          } else if (upPressed) {
+            xvel2 += v.x;
+            zvel += v.z;
+          }
+          let mag = Math.sqrt(xvel2 * xvel2 + zvel * zvel);
+          zvel *= speed / mag;
+        }
+
+        const vector = new THREE.Vector3();
+        v = camera.getWorldDirection(vector);
+        let t = (410 - camera.position.x) / v.x;
+        target.position.set(410, camera.position.y + v.y * t, camera.position.z + v.z * t);
+        if (shooting && spacePressed) {
+          mode = 'cutscene';
+          cutsceneTime = Date.now();
+          shooting = false;
+          let d = { x: (target.position.x - ball.position.x), y: (target.position.y - ball.position.y), z: (target.position.z - ball.position.z) };
+          let dist = Math.sqrt(d.x * d.x + d.y + d.y);
+          let time = dist / 5;
+          ballyvel = (d.y - 1 / 2 * -0.1 * time * time) / time;
+          ballxvel = 5 * d.x / dist;
+          ballzvel = 5 * d.z / dist;
+          goalieMoveTime = time + 0.2 * Math.random();
+          startingCamera = { x: camera.position.x, y: camera.position.y, z: camera.position.z };
+          goalieTarget = { x: target.position.x, y: target.position.y, z: target.position.z };
+          if (Math.random() < 0.5) {
+            goalieTarget.z *= -1;
+          } else {
+            blocked = true;
+          }
+          kickTime = Date.now();
+        }
+        if (!shooting) {
+          moveGoalieY(sphere2.position.y + goalieTarget.y / goalieMoveTime);
+          moveGoalieZ(sphere.position.z + goalieTarget.z / goalieMoveTime);
+        }
+        if ((ball.position.y < 48 && (ball.position.x - 410) ** 2 + (ball.position.z - 69) ** 2 < 100)
+          || (ball.position.y < 48 && (ball.position.x - 410) ** 2 + (ball.position.z + 73) ** 2 < 100)
+          || ((ball.position.z > -73 && ball.position.z < 69) && (ball.position.x - 410) ** 2 + (ball.position.y - 46) ** 2 < 100)) {
+          if (touchinggoal == false) {
+            touchinggoal = true;
+            ballxvel = -ballxvel;
+          }
+        } else {
+          touchinggoal = false;
+        }
+        if (!blocked && !scoring && ball.position.z > -72 && ball.position.z < 68 && ball.position.y < 46 && ball.position.x > 410) {
+          goals++;
+          scoring = true;
+          const sc = document.getElementById('scoreboard');
+          sc.textContent = goals + ' - ' + misses;
+          setTimeout(reset, 1000);
+
+        } else if (!scoring && (ball.position.z > 410 || (kickTime && Date.now() - kickTime > 1000))) {
+          scoring = true;
+          if (blocked) {
+            ballxvel *= -1;
+          }
+          misses++;
+          const sc = document.getElementById('scoreboard');
+          sc.textContent = goals + ' - ' + misses;
+          setTimeout(reset, 1000);
+        }
+      } else if (mode == 'cutscene') {
+        let t = Date.now() - cutsceneTime;
+        if (t > 500) {
+          mode = 'pk';
+        } else {
+          camera.position.x = startingCamera.x + t / 800 * (ballx - startingCamera.x);
+          camera.position.z = startingCamera.z + t / 800 * (ballz - startingCamera.z);
+        }
+      }
+    }
+    reset();
+    render();
+
+  </script>
+</body>
+
+</html>
