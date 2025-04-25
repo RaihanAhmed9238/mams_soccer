@@ -1,0 +1,797 @@
+<!-- this was our original proof of concept, a penalty shootout, which has been kept for demonstration purposes-->
+<!-- Don't expect the code to be particularly clean-->
+<!doctype html>
+<html lang="en-GB">
+
+<head>
+  <meta charset="utf-8" />
+  <title>MAMS Soccer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div id="scoreboard">0 - 0</div>
+  <div id="message">YOU WIN</div>
+
+  <div id="controls">
+    <!-- source: https://symbl.cc/en/unicode-table/ -->
+    <button id="helpBtn" title="Help">?</button>
+    <a href="index.html" id="penaltyBtn">Normal Mode</a>
+  </div>
+  <div id="helpModal">
+    <div id="help">
+      <!--too lazy to use icons-->
+      <span id="closeHelp">&times;</span>
+      <p>Welcome to MAMS Penalty Shootout! Use AD to move left and right, cursor to aim, and space to shoot or let your
+        opponent shoot. You get a maximum of five shots. Score more goals than the other team to win!
+      </p>
+
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'https://cdn.skypack.dev/three@0.129.0/build/three.module.js';
+    import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.129.0/examples/jsm/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'https://cdn.skypack.dev/three@0.129.0/examples/jsm/loaders/DRACOLoader.js';
+    import { PointerLockControls } from 'https://cdn.skypack.dev/three@0.129.0/examples/jsm/controls/PointerLockControls.js';
+
+
+    const WIDTH = window.innerWidth;
+    const HEIGHT = window.innerHeight;
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(WIDTH, HEIGHT);
+    renderer.setClearColor(0xdddddd, 1);
+    document.body.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(70, WIDTH / HEIGHT);
+    const controls = new PointerLockControls(camera, renderer.domElement);
+
+    camera.position.set(300, 0, 50);
+    camera.lookAt(0, 0, 0);
+
+    scene.add(camera);
+    let model = null;
+    let ball = null;
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://cdn.skypack.dev/three@0.129.0/examples/jsm/libs/draco/gltf/');
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+    loader.load('assets/free_soccer_pitch.glb', function (gltf) {
+
+      model = gltf.scene;
+      model.position.set(-10, -195, 0);
+      model.scale.set(5, 5, 5);
+      scene.add(model);
+
+    }, undefined, function (e) {
+
+      console.error(e);
+
+    });
+    loader.load('assets/soccer_ball.glb', function (gltf) {
+
+      ball = gltf.scene;
+      ball.scale.set(300, 300, 300);
+      scene.add(ball);
+
+
+    }, undefined, function (e) {
+
+      console.error(e);
+
+    });
+
+    var light = new THREE.PointLight(0xFFFFFF, 5);
+    light.position.set(-10, 300, 50);
+    scene.add(light);
+
+    var geo = new THREE.PlaneBufferGeometry(2000, 2000);
+    var mat = new THREE.MeshLambertMaterial({ color: 0x3f9b0b, side: THREE.DoubleSide });
+    var plane = new THREE.Mesh(geo, mat);
+    plane.translateY(-10);
+    plane.rotateX(- Math.PI / 2);
+
+    const geometry = new THREE.SphereGeometry(5, 20, 10);
+    const material = new THREE.MeshLambertMaterial({ color: 0x333300 });
+    const sphere = new THREE.Mesh(geometry, material); scene.add(sphere);
+    sphere.position.set(410, 10, 0);
+    const geometry2 = new THREE.SphereGeometry(5, 20, 10);
+    geometry2.scale(1, 2, 1);
+    const sphere2 = new THREE.Mesh(geometry2, material); scene.add(sphere2);
+    sphere2.position.set(410, 0, 0);
+    const geometry3 = new THREE.SphereGeometry(3, 14, 7);
+    const sphere3 = new THREE.Mesh(geometry3, material); scene.add(sphere3);
+    sphere3.position.set(410, 3, 5);
+    const geometry4 = new THREE.SphereGeometry(3, 14, 7);
+    const sphere4 = new THREE.Mesh(geometry4, material); scene.add(sphere4);
+    sphere4.position.set(410, 3, -5);
+    const geometry5 = new THREE.SphereGeometry(3, 14, 7);
+    const sphere5 = new THREE.Mesh(geometry5, material); scene.add(sphere5);
+    sphere5.position.set(410, -9, 4);
+    const geometry6 = new THREE.SphereGeometry(3, 14, 7);
+    const sphere6 = new THREE.Mesh(geometry6, material); scene.add(sphere6);
+    sphere6.position.set(410, -9, -4);
+
+    let players = [];
+    function makePlayer(x, y, z) {
+      let item = [];
+      let g = new THREE.SphereGeometry(5, 20, 10);
+      const m = new THREE.MeshLambertMaterial({ color: 0x333300 });
+      let s = new THREE.Mesh(geometry, material);
+      item.push(s);
+      scene.add(s);
+      s.position.set(x + 410, y + 10, z + 0);
+      g = new THREE.SphereGeometry(5, 20, 10);
+      g.scale(1, 2, 1);
+      s = new THREE.Mesh(geometry2, material); item.push(s); scene.add(s);
+      s.position.set(x + 410, y, z);
+      g = new THREE.SphereGeometry(3, 14, 7);
+      s = new THREE.Mesh(geometry3, material); item.push(s); scene.add(s);
+      s.position.set(x + 410, y + 3, z + 5);
+      g = new THREE.SphereGeometry(3, 14, 7);
+      s = new THREE.Mesh(geometry4, material); item.push(s); scene.add(s);
+      s.position.set(x + 410, y + 3, z - 5);
+      g = new THREE.SphereGeometry(3, 14, 7);
+      s = new THREE.Mesh(geometry5, material); item.push(s); scene.add(s);
+      s.position.set(x + 410, y - 9, z + 4);
+      g = new THREE.SphereGeometry(3, 14, 7);
+      s = new THREE.Mesh(geometry6, material); item.push(s); scene.add(s);
+      s.position.set(x + 410, y - 9, z - 4);
+      players.push(item);
+    }
+    function movePlayerX(i, x) {
+      players[i][0].position.x = (x);
+      players[i][1].position.x = (x);
+      players[i][2].position.x = (x);
+      players[i][3].position.x = (x);
+      players[i][4].position.x = (x);
+      players[i][5].position.x = (x);
+    }
+    function movePlayerY(i, y) {
+      players[i][0].position.y = (y) + 10;
+      players[i][1].position.y = (y);
+      players[i][2].position.y = (y) + 3;
+      players[i][3].position.y = (y) + 3;
+      players[i][4].position.y = (y) - 9;
+      players[i][5].position.y = (y) - 9;
+    }
+    function movePlayerZ(i, z) {
+      players[i][0].position.z = (z);
+      players[i][1].position.z = (z);
+      players[i][2].position.z = (z) + 5;
+      players[i][3].position.z = (z) - 5;
+      players[i][4].position.z = (z) + 4;
+      players[i][5].position.z = (z) - 4;
+    }
+    let show = false;
+    if (show) {
+      for (let i = 1; i <= 100; i++) {
+        makePlayer(-100 * i, 0, 0);
+      }
+
+
+    }
+    const targetg = new THREE.SphereGeometry(2, 20, 10);
+    const matt = new THREE.MeshLambertMaterial({ color: 0xFF0000 });
+    const target = new THREE.Mesh(targetg, matt); scene.add(target);
+    target.position.set(410, 0, 0);
+
+    const texture = new THREE.TextureLoader().load('assets/glove.png');
+
+
+    // and this is example code to get it to be on a plane
+    const geometry11 = new THREE.PlaneGeometry(5, 5, 16, 16);
+    const material11 = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+    const plane11 = new THREE.Mesh(geometry11, material11);
+    plane11.position.set(410, -5, 40);
+    geometry11.scale(1.5, 1.5, 1.5);
+    plane11.rotateY(1.571)
+    scene.add(plane11);
+
+    //scene.add(plane);
+
+    document.addEventListener("keydown", keyDownHandler, false);
+    document.addEventListener("keyup", keyUpHandler, false);
+    let rightPressed = false;
+    let leftPressed = false;
+    let upPressed = false;
+    let downPressed = false;
+    let spacePressed = false;
+    function keyDownHandler(event) {
+      if (event.code == "KeyD") {
+        rightPressed = true;
+      } else if (event.code == "KeyA") {
+        leftPressed = true;
+      }
+      if (event.code == "KeyS") {
+        downPressed = true;
+      } else if (event.code == "KeyW") {
+        upPressed = true;
+      }
+
+      if (event.code == "Space") {
+        spacePressed = true;
+      }
+    }
+    function keyUpHandler(event) {
+      if (event.code == "KeyD") {
+        rightPressed = false;
+      } else if (event.code == "KeyA") {
+        leftPressed = false;
+      }
+      if (event.code == "KeyS") {
+        downPressed = false;
+      } else if (event.code == "KeyW") {
+        upPressed = false;
+      }
+
+      if (event.code == "Space") {
+        spacePressed = false;
+      }
+    }
+    let xvel = 0;
+    let yvel = 0;
+    let zvel = 0;
+    let ballx = 320;
+    let bally = -7.5;
+    let ballz = 0;
+    let ballxvel = 0;
+    let ballyvel = 0;
+    let ballzvel = 0;
+
+    let scoring = false;
+
+    let touchingball;
+    let touchinggoal;
+    let transferSpeed;
+    let speed;
+    let spaceTime;
+    let mode;
+    let shooting;
+    let blocked;
+
+    let kickTime = null;;
+
+    let goals = 0;
+    let misses = 0;
+    let shots = 0;
+    let shooterRunning = false;
+    let shooterShooting = false;
+    let shooterShot = false;
+    let shooterTime;
+
+    function reset() {
+      goalieStartTime = 0;
+      blocked = false;
+      playerx = 300;
+      playery = 0;
+      playerz = 0;
+      moveGoalieY(0);
+
+      moveGoalieZ(0);
+      xvel = 0;
+      yvel = 0;
+      zvel = 0;
+      ballx = 320;
+      bally = -7.5;
+      ballz = 0;
+      ballxvel = 0;
+      ballyvel = 0;
+      ballzvel = 0;
+      scoring = false;
+
+      touchingball = false;
+      touchinggoal = false;
+      transferSpeed = 1;
+      speed = 1;
+      spaceTime = null;
+      mode = 'goalie';
+      shooting = true;
+      kickTime = null;
+      shooterRunning = false;
+      shooterShooting = false;
+      shooterShot = false;
+    }
+    document.body.addEventListener('click', function () {
+      //lock mouse on screen
+      controls.lock();
+    }, false);
+
+    function moveGoalieY(y) {
+      sphere.position.y = (y) + 10;
+      sphere2.position.y = (y);
+      sphere3.position.y = (y) + 3;
+      sphere4.position.y = (y) + 3;
+      sphere5.position.y = (y) - 9;
+      sphere6.position.y = (y) - 9;
+    }
+    function moveGoalieZ(z) {
+      sphere.position.z = (z);
+      sphere2.position.z = (z);
+      sphere3.position.z = (z) + 5;
+      sphere4.position.z = (z) - 5;
+      sphere5.position.z = (z) + 4;
+      sphere6.position.z = (z) - 4;
+    }
+    function moveGoalieX(x) {
+      sphere.position.x = (x);
+      sphere2.position.x = (x);
+      sphere3.position.x = (x);
+      sphere4.position.x = (x);
+      sphere5.position.x = (x);
+      sphere6.position.x = (x);
+    }
+    let goalieTarget = 0;
+    let goalieStartTime = 0;
+    let goalieStart;
+    let goalieMovement = {};
+    let goalieMoveTime = 0;
+    let cutsceneTime = 0;
+    let startingCamera;
+
+    function showMessage(txt) {
+      const msg = document.getElementById('message');
+      msg.textContent = txt;
+      msg.style.animation = 'show 1s';
+      setTimeout(() => {
+        msg.style.animation = 'none';
+      }, 1000);
+    }
+
+    function updateScore() {
+      if (goals > misses) {
+        let max = misses + 5 - shots / 2;
+        if (goals > max) {
+          showMessage("YOU WIN!");
+          goals = shots = misses = 0;
+          const sc = document.getElementById('scoreboard');
+          sc.textContent = goals + ' - ' + misses;
+          reset();
+          return;
+        }
+      } else if (goals < misses) {
+        let max = goals + 5 - shots / 2;
+        if (misses > max) {
+          showMessage("YOU LOSE!");
+          goals = shots = misses = 0;
+          const sc = document.getElementById('scoreboard');
+          sc.textContent = goals + ' - ' + misses;
+          reset();
+          return;
+        }
+      } else if (shots == 10) {
+        showMessage("SUDDEN DEATH!");
+        return;
+      }
+
+
+      showMessage("GOAL!");
+
+      const sc = document.getElementById('scoreboard');
+      sc.textContent = goals + ' - ' + misses;
+    }
+
+
+    let playerx = camera.position.x;
+    let playery = camera.position.y;
+    let playerz = camera.position.z;
+
+    function render() {
+
+      setTimeout(() => {
+
+        requestAnimationFrame(render);
+      });
+      renderer.render(scene, camera);
+      if (show) {
+        for (let i = 1; i < players.length; i++) {
+          let dx = ballx - players[i][0].position.x;
+          let dz = ballz - players[i][0].position.z;
+          let l = Math.sqrt(dx * dx + dz * dz);
+          //dx/=l;
+          //dz/=l;
+          movePlayerX(i, players[i][0].position.x + dx / 100);
+          movePlayerZ(i, players[i][0].position.z + dz / 100);
+          let closestDistance = 100000000;
+          for (let j = 1; j < players.length; j++) {
+            if (j != i) {
+              if ((players[i][0].position.x - players[j][0].position.x) ** 2 + (players[i][0].position.z - players[j][0].position.z) ** 2 < 400) {
+                dx = players[j][0].position.x - players[i][0].position.x;
+                dz = players[j][0].position.z - players[i][0].position.z;
+                l = Math.sqrt(dx * dx + dz * dz);
+                movePlayerX(i, players[i][0].position.x - (20 - l) * dx / l);
+                movePlayerZ(i, players[i][0].position.z - (20 - l) * dz / l);
+              }
+            }
+          }
+        }
+      }
+
+      let vel = Math.sqrt(xvel * xvel + zvel * zvel);
+
+      camera.position.x = playerx;
+      if (vel < 0.01) {
+        camera.position.y = 0 + playery;
+      } else {
+        camera.position.y = 0 + playery + vel * Math.sin(0.0015 * 6.28 * Date.now());
+        const vect = new THREE.Vector3();
+        let v = camera.getWorldDirection(vect);
+        camera.rotateX(1 / 180 * vel * Math.sin(0.0015 * 6.28 * Date.now()));
+      }
+      camera.position.z = playerz;
+
+      if (!ball) { return; }
+      if (mode != 'cutscene') {
+        plane11.position.z = playerz;
+        plane11.position.y = playery - 5;
+        ballx += ballxvel;
+        ballz += ballzvel;
+        ball.rotateX(ballzvel * 1 / 10);
+
+        ball.rotateZ(-ballxvel * 1 / 10);
+        ballxvel *= 0.99;
+        ballzvel *= 0.99;
+        if (ball) ball.position.set(ballx, bally, ballz);
+
+        yvel -= 0.1;
+        if (playery > 0 || yvel > 0) {
+          playery += yvel;
+        }
+        ballyvel -= 0.1;
+
+        if (bally > -7.5 || ballyvel > 0) {
+          bally += ballyvel;
+        } else {
+          bally = -7.5;
+        }
+        if (bally < -5 && bally > -7.5 && ballyvel < 0) {
+          ballyvel = -ballyvel * 0.8;
+        }
+
+        playerx += xvel;
+        playerz += zvel;
+        xvel *= 0.8;
+        zvel *= 0.8;
+      }
+      if (mode == 'normal') {
+        const vector = new THREE.Vector3();
+        let v = camera.getWorldDirection(vector);
+
+        if (rightPressed || leftPressed || downPressed || upPressed) {
+          xvel = 0;
+          zvel = 0;
+
+          if (rightPressed) {
+            xvel += -v.z;
+            zvel += v.x;
+          } else if (leftPressed) {
+            xvel += v.z;
+            zvel += -v.x;
+          }
+
+          if (downPressed) {
+            xvel += -v.x;
+            zvel += -v.z;
+          } else if (upPressed) {
+            xvel += v.x;
+            zvel += v.z;
+          }
+          let mag = Math.sqrt(xvel * xvel + zvel * zvel);
+          xvel *= speed / mag;
+          zvel *= speed / mag;
+        }
+        if (spacePressed) {
+
+        }
+
+        if (spacePressed && (!spaceTime || Date.now() - spaceTime < 500)) {
+          console.log('charging')
+          if (!spaceTime) {
+            spaceTime = Date.now();
+          }
+          speed = 1.5;
+          transferSpeed *= 1.05;
+        } else {
+          console.log('uncharged')
+          speed = 1;
+          transferSpeed = 1;
+        }
+        if (!spacePressed) {
+          spaceTime = null;
+        }
+
+
+        if (ball && (ball.position.x - playerx) * (ball.position.x - playerx) + (ball.position.z - playerz) * (ball.position.z - playerz) < 100) {
+          if (!touchingball) {
+            ballxvel = transferSpeed * xvel;
+            ballzvel = transferSpeed * zvel;
+            if (spacePressed) {
+              ballyvel = transferSpeed;
+              let r = 100 * Math.random() - 50;
+              sphere.position.z = (r);
+              sphere2.position.z = (r);
+              sphere3.position.z = (r) + 5;
+              sphere4.position.z = (r) - 5;
+              sphere5.position.z = (r) + 4;
+              sphere6.position.z = (r) - 4;
+
+
+            }
+            touchingball = true;
+          }
+          let dist = (ball.position.x - playerx) * (ball.position.x - playerx) + (ball.position.z - playerz) * (ball.position.z - playerz);
+          dist = 10 - Math.sqrt(dist);
+          let ox = (ball.position.x - playerx);
+          let oz = (ball.position.z - playerz);
+          let l = Math.sqrt(ox * ox + oz * oz);
+          ballx += dist * ox / l;
+          ballz += dist * oz / l;
+        } else {
+          touchingball = false;
+        }
+      } else if (mode == 'pk') {
+        target.visible = true;
+        moveGoalieX(410);
+        const vect = new THREE.Vector3();
+        let v = camera.getWorldDirection(vect);
+
+        if (rightPressed || leftPressed || downPressed || upPressed) {
+          let xvel2 = 0;
+          zvel = 0;
+
+          if (rightPressed) {
+            xvel2 += -v.z;
+            zvel += v.x;
+          } else if (leftPressed) {
+            xvel2 += v.z;
+            zvel += -v.x;
+          }
+
+          if (downPressed) {
+            xvel2 += -v.x;
+            zvel += -v.z;
+          } else if (upPressed) {
+            xvel2 += v.x;
+            zvel += v.z;
+          }
+          let mag = Math.sqrt(xvel2 * xvel2 + zvel * zvel);
+          zvel *= speed / mag;
+        }
+
+        const vector = new THREE.Vector3();
+        v = camera.getWorldDirection(vector);
+        let t = (410 - playerx) / v.x;
+        target.position.set(410, playery + v.y * t, playerz + v.z * t);
+        if (shooting && spacePressed) {
+          shots++;
+          mode = 'cutscene';
+          cutsceneTime = Date.now();
+          shooting = false;
+          target.position.x += 50 * (Math.random() - 0.5);
+          target.position.y += 60 * (Math.random() - 0.5);
+          target.position.z += 50 * (Math.random() - 0.5);
+          let d = { x: (target.position.x - ball.position.x), y: (target.position.y - ball.position.y), z: (target.position.z - ball.position.z) };
+
+          let dist = Math.sqrt(d.x * d.x + d.y + d.y);
+          let time = dist / 3;
+          ballyvel = (d.y - 1 / 2 * -0.1 * time * time) / time;
+          ballxvel = 3 * d.x / dist;
+          ballzvel = 3 * d.z / dist;
+
+          startingCamera = { x: playerx, y: playery, z: playerz };
+
+
+          goalieTarget = { x: target.position.x, y: target.position.y, z: target.position.z };
+          let c = 1.0;
+          if (goalieTarget.y > 24) {
+            c *= 1.2;
+          }
+          if (goalieTarget.z > 50 || goalieTarget.z < -54) {
+            c *= 1.2;
+          }
+          if (Math.random() / c < 0.5) {
+            goalieTarget.z *= -1;
+          }
+          goalieStart = { x: sphere2.position.x, y: sphere2.position.y, z: sphere2.position.z };
+          goalieMovement = { x: goalieTarget.x - sphere2.position.x, y: goalieTarget.y - sphere2.position.y, z: goalieTarget.z - sphere2.position.z };
+          goalieMoveTime = time + 0.2 * Math.random();
+
+        }
+        if (!shooting) {
+          target.visible = false;
+        }
+        if (!shooting && goalieStartTime != 0 && goalieStartTime < goalieMoveTime) {
+          if (!(sphere2.position.z > 55 || sphere2.position.z < -60 || sphere2.position.y < 0 || sphere2.position.y > 27)) {
+            moveGoalieY(goalieStart.y + goalieMovement.y / goalieMoveTime * goalieStartTime);
+            moveGoalieZ(goalieStart.z + goalieMovement.z / goalieMoveTime * goalieStartTime);
+            goalieStartTime++;
+          }
+        }
+        if ((ball.position.y < 48 && (ball.position.x - 410) ** 2 + (ball.position.z - 69) ** 2 < 25)
+          || (ball.position.y < 48 && (ball.position.x - 410) ** 2 + (ball.position.z + 73) ** 2 < 25)
+          || ((ball.position.z > -73 && ball.position.z < 69) && (ball.position.x - 410) ** 2 + (ball.position.y - 46) ** 2 < 25)) {
+          if (touchinggoal == false) {
+            touchinggoal = true;
+            ballxvel = -ballxvel;
+          }
+        } else {
+          touchinggoal = false;
+        }
+        let diff = { x: (ball.position.x - sphere.position.x), y: (ball.position.y - sphere.position.y), z: (ball.position.z - sphere.position.z) };
+        if (diff.x * diff.x + diff.z * diff.z < 100) {
+          if (bally + 7.5 < sphere2.position.y + 15 && bally + 7.5 > sphere2.position.y) {
+            blocked = true;
+          }
+        }
+        if (!blocked && !scoring && ball.position.z > -72 && ball.position.z < 68 && ball.position.y < 46 && ball.position.x > 410) {
+          goals++;
+          scoring = true;
+          ballxvel = -0.1 * Math.abs(ballxvel);
+          ballzvel = -0.1 * ballzvel;
+
+          updateScore();
+          setTimeout(() => {
+            reset();
+            mode = 'goalie';
+            camera.lookAt(0, 0, 0);
+          }, 1000);
+
+        } else if (!scoring && ((ball.position.x > 400 && blocked) || (kickTime && Date.now() - kickTime > 1000))) {
+          scoring = true;
+          if (blocked) {
+            ballxvel = -Math.abs(ballxvel);
+          }
+          showMessage("MISS!");
+
+          setTimeout(() => {
+            reset();
+            mode = 'goalie';
+            camera.lookAt(0, 0, 0);
+
+          }, 1000);
+
+        }
+      } else if (mode == 'cutscene') {
+        target.visible = false;
+        let t = Date.now() - cutsceneTime;
+        if (t > 500) {
+          goalieStartTime = 1;
+          kickTime = Date.now();
+
+          mode = 'pk';
+        } else {
+          playerx = startingCamera.x + t / 800 * (ballx - startingCamera.x);
+          playerz = startingCamera.z + t / 800 * (ballz - startingCamera.z);
+        }
+      } else if (mode == 'goalie') {
+        target.visible = false;
+        const vector = new THREE.Vector3();
+        let v = camera.getWorldDirection(vector);
+
+        if (rightPressed || leftPressed || downPressed || upPressed) {
+          let xvel2 = 0;
+          zvel = 0;
+
+          if (rightPressed && playerz > -65) {
+            xvel2 += -v.z;
+            zvel += v.x;
+          } else if (leftPressed && playerz < 62) {
+            xvel2 += v.z;
+            zvel += -v.x;
+          }
+
+          if (downPressed) {
+            xvel2 += -v.x;
+            zvel += -v.z;
+          } else if (upPressed) {
+            xvel2 += v.x;
+            zvel += v.z;
+          }
+          let mag = Math.sqrt(xvel2 * xvel2 + zvel * zvel);
+          zvel *= speed;
+        }
+        playerx = 415;
+        moveGoalieX(300);
+        if (spacePressed && !shooterRunning) {
+          shots++;
+          shooterRunning = true;
+          shooterTime = Date.now();
+        }
+
+        if (shooterRunning) {
+          let t = Date.now() - shooterTime;
+          if (t > 500) {
+            if (!scoring && ball.position.z > -72 && ball.position.z < 68 && ball.position.y < 46 && ball.position.x > 420) {
+              misses++;
+              scoring = true;
+              ballxvel = -0.1 * Math.abs(ballxvel);
+              ballzvel = -0.1 * ballzvel;
+
+              updateScore();
+              shooterShot = true;
+              setTimeout(() => {
+                reset();
+                mode = 'pk';
+                camera.lookAt(410, 0, 0);
+              }, 1000);
+
+
+            }
+          }
+          if (!shooterShot && (t > 5000 || ballx > 420)) {
+
+            shooterShot = true;
+            showMessage("MISS!");
+            setTimeout(() => {
+              reset();
+              mode = 'pk';
+              camera.lookAt(410, 0, 0);
+
+            }, 1000);
+
+            return;
+          }
+          if (t > 500) {
+            if (spacePressed && playery <= 0) {
+              yvel = 3;
+
+            }
+            if ((ball.position.y < 48 && (ball.position.x - 410) ** 2 + (ball.position.z - 69) ** 2 < 25)
+              || (ball.position.y < 48 && (ball.position.x - 410) ** 2 + (ball.position.z + 73) ** 2 < 25)
+              || ((ball.position.z > -73 && ball.position.z < 69) && (ball.position.x - 410) ** 2 + (ball.position.y - 46) ** 2 < 25)) {
+              if (touchinggoal == false) {
+                touchinggoal = true;
+                ballxvel = -ballxvel;
+
+              }
+
+            } else {
+              touchinggoal = false;
+            }
+            let diff = { x: (ball.position.x - playerx), y: (ball.position.y - playery), z: (ball.position.z - playerz) };
+
+            if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < 100) {
+              if (touchinggoal == false) {
+                touchinggoal = true;
+                ballxvel = -ballxvel;
+
+              }
+            } else {
+              touchinggoal = false;
+            }
+
+            if (!shooterShooting) {
+              shooterShooting = true;
+              target.position.z = -72 + Math.random() * 140;
+              target.position.y = Math.random() * 46;
+              target.position.x = 410;
+              let d = { x: (target.position.x - ball.position.x), y: (target.position.y - ball.position.y), z: (target.position.z - ball.position.z) };
+              d.x += 50 * (Math.random() - 0.5);
+              d.y += 60 * (Math.random() - 0.5);
+              d.z += 50 * (Math.random() - 0.5);
+              let dist = Math.sqrt(d.x * d.x + d.y + d.y);
+              let time = dist / 2;
+              ballyvel = (d.y - 1 / 2 * -0.1 * time * time) / time;
+              ballxvel = 2 * d.x / dist;
+              ballzvel = 2 * d.z / dist;
+            }
+          } else {
+            moveGoalieX(300 + t / 800 * (ballx - 300));
+          }
+        }
+      }
+    }
+    reset();
+    render();
+
+    document.querySelector('#helpBtn').addEventListener('click', () => {
+      helpModal.style.display = 'block';
+    });
+
+    document.querySelector('#closeHelp').addEventListener('click', () => {
+      helpModal.style.display = 'none';
+    });
+  </script>
+</body>
+
+</html>

@@ -4,57 +4,31 @@
 <head>
   <meta charset="utf-8" />
   <title>MAMS Soccer</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-    }
-
-    canvas {
-      width: 100%;
-      height: 100%;
-    }
-
-    #scoreboard {
-      position: absolute;
-      top: 10px;
-      width: 100%;
-      text-align: center;
-      font-size: 80px;
-      z-index: 100;
-      display: block;
-      font-family: Impact;
-    }
-
-    #message {
-      position: absolute;
-      top: 30%;
-      width: 100%;
-      text-align: center;
-      font-size: 200px;
-      z-index: 100;
-      display: block;
-      font-family: Impact;
-      filter: opacity(0);
-      animation: none;
-    }
-
-    @keyframes show {
-      0% {
-        filter: opacity(0);
-      }
-
-      100% {
-        filter: opacity(1);
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
   <div id="scoreboard">0 - 0</div>
   <div id="message">YOU WIN</div>
 
+  <div id="controls">
+        <!-- source: https://symbl.cc/en/unicode-table/ -->
+    <button id="resetBtn" title="Reset">&#x21bb;</button>
+    <button id="helpBtn" title="Help">?</button>
+    <a href="penalty_poc.html" id="penaltyBtn">Penalty Mode</a>
+  </div>
+  <div id="helpModal">
+    <div id="help">
+      <!--too lazy to use icons-->
+      <span id="closeHelp">&times;</span>
+      <p>Welcome to MAMS Soccer! Use WASD to move and spacebar to boost, shoot, pass, and steal. Move the camera with your cursor and 
+        press ESC to navigate outside the game. Score five goals with your team to win!
+      </p>
+      <p>
+        Try the Alpha version of this game, the Penalty Shootout, by clicking the button above!
+      </p>
+    </div>
+  </div>
   <script type="module" src="game.js"></script>
 </body>
 
